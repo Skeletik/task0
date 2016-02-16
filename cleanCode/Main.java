@@ -1,13 +1,23 @@
 package com.company;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Scanner;
+
+// Как правильно писать информацию в log.txt? Чтобы не пришлось открывать новый поток в каждом методе только для того, чтобы скинуть инфу в log.txt?
+// PrintWriter logFilePw = new PrintWriter(new BufferedWriter(new FileWriter("log.txt")));
+
+// Как правильно генерировать хэш для сообщения?
+// Какие есть общие замечания по программе?
 
 public class Main {
 
     public static void main(String[] args)  {
+        PrintWriter logFilePw = null;
         try {
-            //PrintWriter logFileOut = new PrintWriter(new BufferedWriter(new FileWriter("log.txt")));
+            logFilePw = new PrintWriter(new BufferedWriter(new FileWriter("log.txt")));
             Messages messages = new Messages();
             System.out.println("Загрузка истории сообщений...");
             messages.readJSON();
@@ -20,7 +30,7 @@ public class Main {
                              "6 — Поиск в истории сообщений по ключевому слову\n" +
                              "7 — Поиск в истории сообщений по регулярному выражению\n" +
                              "8 — Выборка истории сообщений по периоду времени\n" +
-                             "9 — Выкл\n");
+                             "9 — Выключить Уютный Чаткик\n");
             Scanner sc = new Scanner(System.in);
             while (true) {
                 System.out.print("\nВыберите действие: ");
@@ -50,11 +60,13 @@ public class Main {
                         messages.findByPeriodOfTime();
                         break;
                     case 9:
+                        messages.closeLogFileStream();
                         return;
                 }
             }
-        } catch (IOException a) {
-            System.out.println("Error!");
+        } catch (IOException e) {
+            logFilePw.println("\n" + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

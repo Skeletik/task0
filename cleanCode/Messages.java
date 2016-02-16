@@ -2,7 +2,6 @@ package com.company;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -11,7 +10,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Messages {
-    private List <Message> messages = new ArrayList<>();
+    private List<Message> messages = new ArrayList<>();
+    private static PrintWriter logFilePw;
+
+    {
+        try {
+            logFilePw = new PrintWriter(new BufferedWriter(new FileWriter("log.txt")));
+        } catch (IOException e) {
+            logFilePw.println("\n" + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     public void readJSON() throws IOException {
         BufferedReader br = new BufferedReader(new FileReader("input.json"));
@@ -20,38 +29,49 @@ public class Messages {
         while ((line = br.readLine()) != null) sb.append(line);
         String json = sb.toString();
         Gson gson = new Gson();
-        Type type = new TypeToken<List<Message>>(){}.getType();
+        Type type = new TypeToken<List<Message>>() {
+        }.getType();
         messages = gson.fromJson(json, type);
-        for (Message item : messages)
+        for (Message item : messages) {
             System.out.println(item);
+        }
+
+        logFilePw.println("В Уютный Чатик загружено " + messages.size() + " сообщения из input.json:");
+        for (Message item : messages) {
+            logFilePw.println(item);
+        }
     }
 
     public void addMessage() {
         Scanner sc = new Scanner(System.in);
-        /*String a = "hello";
-MessageDigest md = MessageDigest.getInstance("SHA-1")
-System.out.println(Arrays.toString(a.getBytes()));*/
-        String id = "92dff7ee-00d7-41e5-a3db-e7189963ee3e";
+        UUID uuid = UUID.randomUUID();
+        String id = uuid.toString();
         System.out.print("Ваше имя: ");
-        String author = sc.next();
+        String author = sc.nextLine();
         String timestamp = String.valueOf(System.currentTimeMillis());
         System.out.print("Ваш текст: ");
-        String message = sc.next();
+        String message = sc.nextLine();
         messages.add(new Message(id, author, timestamp, message));
+        System.out.println("id нового сообщения: " + id);
+
+        logFilePw.println("\nДобавлено сообщение в messages list:");
+        logFilePw.println(messages.get(messages.size() - 1));
     }
 
     public void showMessagesInChronologicalOrder() {
-        List <Message> temp = new ArrayList<>(messages);
+        List<Message> temp = new ArrayList<>(messages);
         System.out.println(temp);
-        //Как здесь реализовать сравнение лонгов, а не строк? Быстрее вдеь.
-        //Collections.sort(temp, (a, b) -> Long.parseLong(a.getTimestamp()) - (Long.parseLong(b.getTimestamp())));
-        Collections.sort(temp, new Comparator<Message>() {
-            @Override public int compare(Message a, Message b) {
+        Collections.sort(temp, (a, b) -> Long.valueOf(a.getTimestamp()).compareTo(Long.valueOf(b.getTimestamp())));
+        /*Collections.sort(temp, new Comparator<Message>() {
+            @Override
+            public int compare(Message a, Message b) {
                 return a.getTimestamp().compareTo(b.getTimestamp());
             }
-        });
+        });*/
         for (Message item : temp)
             System.out.println(item);
+
+        logFilePw.println("\nВызван метод showMessagesInChronologicalOrder()");
     }
 
     public void deleteMessageById() {
@@ -61,7 +81,11 @@ System.out.println(Arrays.toString(a.getBytes()));*/
         for (int i = 0; i < messages.size(); i++) {
             if (id.equals(messages.get(i).getId())) {
                 messages.remove(i);
-            } else { System.out.print("\nНет сообщения с таким идентификатором"); }
+                logFilePw.println("\nИз messages list удалено сообщение с id:\n" + id);
+            } else {
+                System.out.print("\nНет сообщения с таким идентификатором");
+                logFilePw.println("\nНе получилось удалить сообщение из messages list с id:\n" + id);
+            }
         }
     }
 
@@ -71,29 +95,49 @@ System.out.println(Arrays.toString(a.getBytes()));*/
         PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("input.json")));
         pw.print(s);
         pw.close();
+
+        logFilePw.println("\nВызван метод writeJSON");
     }
 
     public void findByAuthor() {
         Scanner sc = new Scanner(System.in);
         System.out.print("Введите имя того, кто написал сообщение: ");
-        String author = sc.next();
+        String author = sc.nextLine();
+        int appropriateMessagesCounter = 0;
         for (Message item : messages) {
-            if (item.getAuthor().equals(author)) // We can compare by ==, can't we?
-                System.out.println("true");
-            else
-                System.out.println("false");
+            if (item.getAuthor().equals(author)) { // We cannot compare by ==.
+                if (appropriateMessagesCounter == 0) {
+                    System.out.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" +  item);
+                    logFilePw.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" +  item);
+                } else {
+                    logFilePw.println(item);
+                }
+                ++appropriateMessagesCounter;
+            }
+        }
+        if (appropriateMessagesCounter == 0) {
+            System.out.println("\nВ Уютном Чатике не найдено ни одного сообщения автора: \"" + author + "\"");
+            logFilePw.println("\nВ Уютном Чатике не найдено ни одного сообщения автора: \"" + author + "\"");
         }
     }
 
     public void findByKeyword() {
         Scanner sc = new Scanner(System.in);
-        System.out.print("Введите строку для поиска: ");
-        String str = sc.next();
+        System.out.print("Введите, что вы хотите найти в сообщениях Уютного Чатика: ");
+        String str = sc.nextLine();
+        int appropriateMessagesCounter = 0;
         for (int i = 0; i < messages.size(); i++) {
             if (messages.get(i).getMessage().contains(str)) {
-                System.out.println(messages.get(i));
+                if (appropriateMessagesCounter == 0){
+                    System.out.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
+                    logFilePw.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
+                }
+                ++appropriateMessagesCounter;
             }
-            else System.out.println("false");
+        }
+        if (appropriateMessagesCounter == 0) {
+            System.out.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + str + "\"");
+            logFilePw.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + str + "\"");
         }
     }
 
@@ -117,8 +161,13 @@ System.out.println(Arrays.toString(a.getBytes()));*/
         System.out.println("До: ");
         long till = sc.nextLong();
         for (Message item : messages) {
-            if (Long.parseLong(item.getTimestamp()) >= from && Long.parseLong(item .getTimestamp()) <= till)  System.out.println("true");
+            if (Long.parseLong(item.getTimestamp()) >= from && Long.parseLong(item.getTimestamp()) <= till)
+                System.out.println("true");
             else System.out.println("false");
         }
+    }
+
+    public void closeLogFileStream() {
+        logFilePw.close();
     }
 }
