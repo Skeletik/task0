@@ -22,6 +22,52 @@ public class Messages {
         }
     }
 
+    public void showInterface() throws IOException {
+        System.out.print("\n1 — Добавить сообщение\n" +
+                "2 — Просмотреть историю сообщений(в хронологическом порядке)\n" +
+                "3 — Удалить сообщение по идентификатору\n" +
+                "4 — Сохранить сообщения в файл\n" +
+                "5 — Поиск в истории сообщений по автору\n" +
+                "6 — Поиск в истории сообщений по ключевому слову\n" +
+                "7 — Поиск в истории сообщений по регулярному выражению\n" +
+                "8 — Выборка истории сообщений по периоду времени\n" +
+                "9 — Выключить Уютный Чаткик\n");
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            System.out.print("\nВыберите действие: ");
+            switch (sc.nextInt()) {
+                case 1:
+                    addMessage();
+                    break;
+                case 2:
+                    showMessagesInChronologicalOrder();
+                    break;
+                case 3:
+                    deleteMessageById();
+                    break;
+                case 4:
+                    writeJSON();
+                    break;
+                case 5:
+                    findByAuthor();
+                    break;
+                case 6:
+                    findByKeyword();
+                    break;
+                case 7:
+                    findByRegExp();
+                    break;
+                case 8:
+                    findByPeriodOfTime();
+                    break;
+                case 9:
+                    closeLogFileStream();
+                    System.out.println("Уютный Чатик завершает работу..");
+                    return;
+            }
+        }
+    }
+
     public void readJSON() throws IOException {
         BufferedReader br = new BufferedReader(new FileReader("input.json"));
         StringBuilder sb = new StringBuilder();
@@ -60,14 +106,7 @@ public class Messages {
 
     public void showMessagesInChronologicalOrder() {
         List<Message> temp = new ArrayList<>(messages);
-        System.out.println(temp);
         Collections.sort(temp, (a, b) -> Long.valueOf(a.getTimestamp()).compareTo(Long.valueOf(b.getTimestamp())));
-        /*Collections.sort(temp, new Comparator<Message>() {
-            @Override
-            public int compare(Message a, Message b) {
-                return a.getTimestamp().compareTo(b.getTimestamp());
-            }
-        });*/
         for (Message item : temp)
             System.out.println(item);
 
@@ -107,8 +146,8 @@ public class Messages {
         for (Message item : messages) {
             if (item.getAuthor().equals(author)) { // We cannot compare by ==.
                 if (appropriateMessagesCounter == 0) {
-                    System.out.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" +  item);
-                    logFilePw.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" +  item);
+                    System.out.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" + item);
+                    logFilePw.println("\n\"" + author + "\" писал в Уютный Чатик:" + "\n" + item);
                 } else {
                     logFilePw.println(item);
                 }
@@ -128,7 +167,7 @@ public class Messages {
         int appropriateMessagesCounter = 0;
         for (int i = 0; i < messages.size(); i++) {
             if (messages.get(i).getMessage().contains(str)) {
-                if (appropriateMessagesCounter == 0){
+                if (appropriateMessagesCounter == 0) {
                     System.out.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
                     logFilePw.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
                 }
