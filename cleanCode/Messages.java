@@ -213,9 +213,9 @@ public class Messages {
         format.applyPattern("dd.MM.yyyy hh:mm");
         Date fromDate = format.parse(from);
         Date toDate = format.parse(till);
-
+        Date timestampDate;
         for (Message item : messages) {
-            Date timestampDate = new Date(Long.valueOf(item.getTimestamp()));
+            timestampDate = new Date(Long.valueOf(item.getTimestamp()));
             if (timestampDate.compareTo(fromDate) >= 0 && timestampDate.compareTo(toDate) <= 0) {
                 System.out.println("\nСообщение \"" + item.getMessage() + "\" попало в промежуток");
                 logFilePw.println("\nСообщение \"" + item.getMessage() + "\" попало в промежуток");
