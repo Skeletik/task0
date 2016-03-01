@@ -5,15 +5,19 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
 import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+// Нормальный ввод даты для 8-го пункта
 
 public class Messages {
+
     private List<Message> messages = new ArrayList<>();
     private static PrintWriter logFilePw;
 
-    {
+    static {
         try {
             logFilePw = new PrintWriter(new BufferedWriter(new FileWriter("log.txt")));
         } catch (IOException e) {
@@ -22,7 +26,7 @@ public class Messages {
         }
     }
 
-    public void showInterface() throws IOException {
+    public void showInterface() throws IOException, ParseException {
         System.out.print("\n1 — Добавить сообщение\n" +
                 "2 — Просмотреть историю сообщений(в хронологическом порядке)\n" +
                 "3 — Удалить сообщение по идентификатору\n" +
@@ -72,18 +76,16 @@ public class Messages {
         BufferedReader br = new BufferedReader(new FileReader("input.json"));
         StringBuilder sb = new StringBuilder();
         String line;
-        while ((line = br.readLine()) != null) sb.append(line);
+        while ((line = br.readLine()) != null) {
+            sb.append(line);
+        }
         String json = sb.toString();
         Gson gson = new Gson();
-        Type type = new TypeToken<List<Message>>() {
-        }.getType();
+        Type type = new TypeToken<List<Message>>() {}.getType();
         messages = gson.fromJson(json, type);
-        for (Message item : messages) {
-            System.out.println(item);
-        }
-
         logFilePw.println("В Уютный Чатик загружено " + messages.size() + " сообщения из input.json:");
         for (Message item : messages) {
+            System.out.println(item);
             logFilePw.println(item);
         }
     }
@@ -97,8 +99,9 @@ public class Messages {
         String timestamp = String.valueOf(System.currentTimeMillis());
         System.out.print("Ваш текст: ");
         String message = sc.nextLine();
-        messages.add(new Message(id, author, timestamp, message));
         System.out.println("id нового сообщения: " + id);
+        System.out.println("Время добавления: " + new Date(Long.valueOf(timestamp)));
+        messages.add(new Message(id, author, timestamp, message));
 
         logFilePw.println("\nДобавлено сообщение в messages list:");
         logFilePw.println(messages.get(messages.size() - 1));
@@ -117,14 +120,18 @@ public class Messages {
         Scanner sc = new Scanner(System.in);
         System.out.print("Введите идентификатор сообщения, которое нужно удалить: ");
         String id = sc.next();
+        int deletedMessagesCounter = 0;
         for (int i = 0; i < messages.size(); i++) {
             if (id.equals(messages.get(i).getId())) {
                 messages.remove(i);
-                logFilePw.println("\nИз messages list удалено сообщение с id:\n" + id);
-            } else {
-                System.out.print("\nНет сообщения с таким идентификатором");
-                logFilePw.println("\nНе получилось удалить сообщение из messages list с id:\n" + id);
+                System.out.print("\nИз messages list удалено сообщение с id:\n" + id + "\n");
+                logFilePw.println("\nИз messages list удалено сообщение с id:\n" + id + "\n");
+                deletedMessagesCounter++;
             }
+        }
+        if (deletedMessagesCounter == 0) {
+            System.out.print("\nНет сообщения с таким идентификатором\n");
+            logFilePw.println("\nНе получилось удалить сообщение из messages list с id:\n" + id);
         }
     }
 
@@ -163,46 +170,56 @@ public class Messages {
     public void findByKeyword() {
         Scanner sc = new Scanner(System.in);
         System.out.print("Введите, что вы хотите найти в сообщениях Уютного Чатика: ");
-        String str = sc.nextLine();
+        String keyword = sc.nextLine();
         int appropriateMessagesCounter = 0;
-        for (int i = 0; i < messages.size(); i++) {
-            if (messages.get(i).getMessage().contains(str)) {
+        for (Message message : messages) {
+            if (message.getMessage().contains(keyword)) {
                 if (appropriateMessagesCounter == 0) {
-                    System.out.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
-                    logFilePw.println("\nОтрывок " + str + " найден в сообщении " + messages.get(i));
+                    System.out.println("\nОтрывок " + keyword + " найден в сообщении " + message);
+                    logFilePw.println("\nОтрывок " + keyword + " найден в сообщении " + message);
                 }
                 ++appropriateMessagesCounter;
             }
         }
         if (appropriateMessagesCounter == 0) {
-            System.out.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + str + "\"");
-            logFilePw.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + str + "\"");
+            System.out.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + keyword + "\"");
+            logFilePw.println("\nВ Уютном Чатике не найдено ни одного сообщения, содержащего отрывок: \"" + keyword + "\"");
         }
     }
 
     public void findByRegExp() {
         Scanner sc = new Scanner(System.in);
         System.out.print("Введите РВ для поиска: ");
-        String patternString = sc.next();
+        String patternString = sc.nextLine();
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher;
         for (Message item : messages) {
             matcher = pattern.matcher(item.getMessage());
-            if (matcher.matches()) System.out.println("true");
-            else System.out.println("false");
+            if (matcher.matches()) {
+                System.out.println("\nРВ \"" + patternString + "\" найден в сообщении " + item.getMessage());
+                logFilePw.println("\nРВ \"" + patternString + "\" найден в сообщении " + item.getMessage());
+            }
         }
     }
 
-    public void findByPeriodOfTime() {
+    public void findByPeriodOfTime() throws ParseException {
         Scanner sc = new Scanner(System.in);
         System.out.print("Введите период времени для поиска\n" + "От: ");
-        long from = sc.nextLong();
-        System.out.println("До: ");
-        long till = sc.nextLong();
+        String from = sc.nextLine();
+        System.out.print("До: ");
+        String till = sc.nextLine();
+
+        SimpleDateFormat format = new SimpleDateFormat();
+        format.applyPattern("dd.MM.yyyy hh:mm");
+        Date fromDate = format.parse(from);
+        Date toDate = format.parse(till);
+
         for (Message item : messages) {
-            if (Long.parseLong(item.getTimestamp()) >= from && Long.parseLong(item.getTimestamp()) <= till)
-                System.out.println("true");
-            else System.out.println("false");
+            Date timestampDate = new Date(Long.valueOf(item.getTimestamp()));
+            if (timestampDate.compareTo(fromDate) >= 0 && timestampDate.compareTo(toDate) <= 0) {
+                System.out.println("\nСообщение \"" + item.getMessage() + "\" попало в промежуток");
+                logFilePw.println("\nСообщение \"" + item.getMessage() + "\" попало в промежуток");
+            }
         }
     }
 

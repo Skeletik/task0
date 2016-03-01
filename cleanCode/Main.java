@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.ParseException;
 
 public class Main {
 
@@ -18,6 +19,9 @@ public class Main {
         } catch (IOException e) {
             logFilePw.println("\n" + e.getMessage());
             e.printStackTrace();
+        } catch (ParseException a) {
+            logFilePw.println("\n" + a.getMessage());
+            a.printStackTrace();
         }
     }
 }
