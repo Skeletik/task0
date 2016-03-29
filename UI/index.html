@@ -16,20 +16,30 @@
 		</div>
 		<div id="messages-body">
 			<div id="messages">
-				<div class="message">
-					<div class="message-header"><b class="message-author">Максим</b> <sup class="message-date">15:27:31, 20.2.2016</sup></div>
-					<div class="message-txt"><button class="delete-button" type="button"><div class="del-character">×</div></button>Привет, ребята!</div>
-				</div>
+				
 			</div>
 		</div>
 		<div class="input-body">
-			<div class="form-group">
+			<div class="form-group"> 
 				<div class="form-group">
   					<input id="author-input" type="text" class="form-control" placeholder="Ваше имя..">
 				</div>
 				<textarea id="txt-input" type="text" placeholder="И сообщение.."></textarea>
 			</div>
 			<button id="add-button" type="button">Отправить</button>
+		</div>
+	</div>
+	<div style="display:none;" id="message-template">
+		<div class="message" data-message-id="id">
+			<div class="message-header">
+				<b class="message-author">(Имя автора)</b>
+				<sup class="message-date">(Дата)</sup>
+			</div>
+			<div class="message-txt">
+				<button class="delete-button" type="button">
+					<div class="del-character">×</div>
+				</button>(Текст сообщения)
+			</div>
 		</div>
 	</div>
 </body>

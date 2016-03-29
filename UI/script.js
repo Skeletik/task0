@@ -1,83 +1,140 @@
-var authorName;
+﻿var authorName;
 var messageTxt;
+var messagesList = [];
 
-function run(){
-    var appContainer = document.getElementsByClassName('container')[0];
-    appContainer.addEventListener('click', delegateEvent);
+function run() {
+	var appContainer = document.getElementsByClassName('container')[0];
+	
+	appContainer.addEventListener('click', delegateEvent);
+	authorName = loadAuthor();
+	var authorInput = document.getElementById('author-input');
+	authorInput.value = authorName;
+	messagesList = loadMessages() || [
+		newMessage('admin', 'Добро пожаловать в Уютный чатик', Date.now(), false)
+	];
+	render(messagesList);
 }
 
-function delegateEvent(evtObj) {
-    if (evtObj.type === 'click') {
-        if (evtObj.target.id == 'add-button') {
-            onAddButtonClick(evtObj);
-        }
-        if (evtObj.target.classList.contains('delete-button')) {
-            deleteMessage(evtObj);
-        }
-        if (evtObj.target.classList.contains('message-txt')) {
-            editMessage(evtObj);
-        }
-    }
+function delegateEvent(event) {
+	if (event.type === 'click') {
+		if (event.target.id == 'add-button') onAddButtonClick(event);
+		if (event.target.classList.contains('delete-button')) deleteMessage(event);
+		if (event.target.classList.contains('message-txt')) editMessage(event);
+	}
 }
 
-function deleteMessage(evtObj) {
-    evtObj.target.parentNode.className = '';
-    evtObj.target.parentNode.style.margin = '1px 0 0 0';
-    evtObj.target.parentNode.innerHTML = 'Сообщение удалено';
+function saveAuthorName(nameToSave) {
+	if (typeof(Storage) == 'undefined') {
+		alert('localStorage is not accessible');
+		return;
+	}
+
+	localStorage.setItem('authorName', JSON.stringify(nameToSave))
 }
 
-function editMessage(evtObj) {
-    var oldMessage = evtObj.target.parentNode;
-    authorName = evtObj.target.parentNode.getElementsByClassName('message-author')[0].innerHTML;
-    messageTxt = prompt('Новое сообщение:', '');
-    if (messageTxt == null || messageTxt == '') {
-        alert("try again!");
-        return;
-    }
-    var newMessage = createMessage(messageTxt);
-    oldMessage.parentNode.replaceChild(newMessage, oldMessage);
+function loadAuthor() {
+	if (typeof(Storage) == 'undefined') {
+		alert('localStorage is not accessible');
+		return;
+	}
+
+	var item = localStorage.getItem('authorName');
+	return item && JSON.parse(item);
 }
 
-function onAddButtonClick() {
-    authorName = document.getElementById('author-input').value;
-    messageTxt = document.getElementById('txt-input');
+function saveMessages(listToSave) {
+	if (typeof(Storage) == 'undefined') {
+		alert('localStorage is not accessible');
+		return;
+	}
 
-    var newMessage = createMessage(messageTxt.value); 
-    messageTxt.value = '';
-    var messages = document.getElementById('messages');
-    messages.appendChild(newMessage);
+	localStorage.setItem('messagesList', JSON.stringify(listToSave))
 }
 
-function createMessage(messageTxt) {
-    if(!authorName || !messageTxt) { return; }
-    
-    var messageDiv = document.createElement('div');
-    var messageHeaderDiv = document.createElement('div');
-    var messageAuthorB = document.createElement('b');
-    var messageDateSup = document.createElement('sup');
-    var messageDelButton = document.createElement('button');
-    var messageDelButtonChar = document.createElement('div');
-    var messageTxtDiv = document.createElement('div');
+function loadMessages() {
+	if (typeof(Storage) == 'undefined') {
+		alert('localStorage is not accessible');
+		return;
+	}
 
-    messageDiv.classList.add('message');
-    messageHeaderDiv.classList.add('message-header');
-    messageAuthorB.classList.add('message-author');
-    messageDateSup.classList.add('message-date');
-    messageDelButton.classList.add('delete-button');
-    messageDelButtonChar.classList.add('del-character');
-    messageTxtDiv.classList.add('message-txt');
+	var item = localStorage.getItem('messagesList');
+	return item && JSON.parse(item);
+}
 
-    messageDiv.appendChild(messageHeaderDiv);
-    messageHeaderDiv.appendChild(messageAuthorB);
-    messageHeaderDiv.appendChild(messageDateSup);
-    messageDiv.appendChild(messageTxtDiv);
-    messageAuthorB.appendChild(document.createTextNode(authorName));
-    messageDelButton.appendChild(messageDelButtonChar);
-    messageDelButtonChar.appendChild(document.createTextNode('×'));
-    messageTxtDiv.appendChild(messageDelButton);
-    messageTxtDiv.appendChild(document.createTextNode(messageTxt));
-    var date = new Date();
-    messageDateSup.appendChild(document.createTextNode(" " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + ", " + date.getDate() + "." + date.getMonth() + "." + date.getFullYear()));
+function render(messages) {
+	for (var i = 0; i < messages.length; i++) {
+		renderMessage(messages[i]);
+	}
+}
 
-    return messageDiv;
+function renderMessage(message) {
+	var messages = document.getElementById('messages');
+	var element = elementFromTemplate();
+
+	renderMessageState(element, message);
+	messages.appendChild(element);
+}
+
+function renderMessageState(element, message) {
+	if (message.deleted) element.getElementsByClassName('message-txt')[0].innerHTML = 'Сообщение удалено';
+	else element.getElementsByClassName('message-txt')[0].innerHTML = '<button class="delete-button" type="button"><div class="del-character">×</div></button>' + message.content;
+	element.getElementsByClassName('message-author')[0].innerHTML = message.author;
+	var date = new Date(message.date);
+	element.getElementsByClassName('message-date')[0].innerHTML = " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + ", " + date.getDate() + "." + date.getMonth() + "." + date.getFullYear();
+	element.setAttribute('data-message-id', message.id);	
+}
+
+function elementFromTemplate() {
+	var template = document.getElementById('message-template');
+	return template.firstElementChild.cloneNode(true);
+}
+
+function deleteMessage(event) {
+	messagesList[event.target.parentNode.parentNode.getAttribute('data-message-id')].deleted = 1;
+	saveMessages(messagesList);
+	event.target.parentNode.className = '';
+	event.target.parentNode.style.margin = '1px 0 0 0';
+	event.target.parentNode.innerHTML = 'Сообщение удалено';
+}
+
+function editMessage(event) {
+	var oldMessage = event.target.parentNode;
+	authorName = event.target.parentNode.getElementsByClassName('message-author')[0].innerHTML;
+	messageTxt = prompt('Новое сообщение:', '');
+	if (messageTxt == null || messageTxt == '') {
+		return;
+	}
+	event.target.innerHTML = '<button class="delete-button" type="button"><div class="del-character">×</div></button>' + messageTxt;
+	messagesList[event.target.parentNode.getAttribute('data-message-id')].content = messageTxt;
+	messagesList[event.target.parentNode.getAttribute('data-message-id')].date = Date.now();
+	saveMessages(messagesList);
+}
+
+function onAddButtonClick(event) {
+	authorName = document.getElementById('author-input');
+	messageInput = document.getElementById('txt-input');
+
+	var message = newMessage(authorName.value, messageInput.value, new Date(), false); 
+
+	if (messageInput.value == '' || authorName.value == '') return;
+
+	messagesList.push(message);
+	messageInput.value = '';
+	render([message]);
+	saveMessages(messagesList);
+	saveAuthorName(authorName.value);
+}
+
+function newMessage(name, text, dates, isDeleted) {
+	return {
+		author: name,
+		content: text,
+		date: dates,
+		deleted: !!isDeleted,
+		id: '' + uniqueId()
+	};
+}
+
+function uniqueId() {
+	return messagesList.length;
 }
