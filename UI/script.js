@@ -10,12 +10,13 @@ function run() {
 	var authorInput = document.getElementById('author-input');
 	authorInput.value = authorName;
 	messagesList = loadMessages() || [
-		newMessage('admin', 'Добро пожаловать в Уютный чатик', Date.now(), false)
+		newMessage('admin', 'Добро пожаловать в Комфортный чатик', Date.now(), false)
 	];
 	render(messagesList);
 }
 
-function delegateEvent(event) {
+function delegateEvent(event) { 
+	console.log(event.type, event.target)
 	if (event.type === 'click') {
 		if (event.target.id == 'add-button') onAddButtonClick(event);
 		if (event.target.classList.contains('delete-button')) deleteMessage(event);
@@ -77,7 +78,7 @@ function renderMessage(message) {
 
 function renderMessageState(element, message) {
 	if (message.deleted) element.getElementsByClassName('message-txt')[0].innerHTML = 'Сообщение удалено';
-	else element.getElementsByClassName('message-txt')[0].innerHTML = '<button class="delete-button" type="button"><div class="del-character">×</div></button>' + message.content;
+	else element.getElementsByClassName('message-txt')[0].innerHTML = '<div class="delete-button">×</div>' + message.content;
 	element.getElementsByClassName('message-author')[0].innerHTML = message.author;
 	var date = new Date(message.date);
 	element.getElementsByClassName('message-date')[0].innerHTML = " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + ", " + date.getDate() + "." + date.getMonth() + "." + date.getFullYear();
@@ -104,7 +105,7 @@ function editMessage(event) {
 	if (messageTxt == null || messageTxt == '') {
 		return;
 	}
-	event.target.innerHTML = '<button class="delete-button" type="button"><div class="del-character">×</div></button>' + messageTxt;
+	event.target.innerHTML = '<div class="delete-button">×</div>' + messageTxt;
 	messagesList[event.target.parentNode.getAttribute('data-message-id')].content = messageTxt;
 	messagesList[event.target.parentNode.getAttribute('data-message-id')].date = Date.now();
 	saveMessages(messagesList);
